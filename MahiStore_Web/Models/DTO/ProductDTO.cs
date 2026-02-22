@@ -12,9 +12,7 @@ namespace MahiStore_Web.Models.DTO
         [Required]
         public decimal Price { get; set; }
         [Required]
-
         public string Description { get; set; }
-       
         public IFormFile? ImageFile { get; set; }
     }
 }
