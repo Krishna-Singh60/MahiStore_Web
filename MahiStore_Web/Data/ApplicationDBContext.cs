@@ -1,7 +1,7 @@
 ﻿using MahiStore_Web.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace MahiStore_Web.Services
+namespace MahiStore_Web.Data
 {
     public class ApplicationDBContext : DbContext
     {

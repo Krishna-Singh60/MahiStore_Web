@@ -1,8 +1,23 @@
-﻿@model List<Product>
+﻿@using Microsoft.AspNetCore.Html
+@model List<Product>
 
-    @{
+@{
     int pageIndex = (int)ViewData["CurrentPage"]!;
     int totalPages = (int)ViewData["TotalPages"]!;
+    string search = ViewData["Search"] as string ?? "";
+    string column = ViewData["Column"] as string ?? "";
+    string orderBy = ViewData["OrderBy"] as string ?? "";
+
+    HtmlString getArrow(string tableColumn)
+    {
+        if (tableColumn != column) return new HtmlString("");
+        if (orderBy == "desc")
+        {
+            return new HtmlString("<i class='bi bi-arrow-down'></i>");
+        }
+        return new HtmlString("<i class='bi bi-arrow-up'></i>");
+    }
+
     }
 
     <h1 class="text-center mb-5">List of the Products</h1>
@@ -11,19 +26,41 @@
             <a class="btn btn-primary" asp-controller="Products" asp-action="Create"> New Product</a>
         </div>
         <div class="col">
-
+        <form asp-action="Index" method="get" class="d-flex" role="search">
+                <input class="form-control me-2" type="search" placeholder="Search by Name or Brand"
+                   aria-label="Search" name="search" value="@search">
+            <button class="btn btn-outline-secondary" type="submit">Search</button>
+            </form>
         </div>
     </div>
-
+    <script>
+    
+    function sortList(param)
+    {
+        debugger;
+        let orderBy = "desc";
+        let currentColumn = "@column";
+        let currentOrderBy = "@orderBy";
+        if(currentColumn === param)
+        {
+            orderBy = currentOrderBy === "asc" ? "desc" : "asc";
+        }
+        // var currentUrl = new URL(window.location.href);
+        // var searchParam = currentUrl + "?search=@(search)&column=" + param +"&orderBy=" +orderBy;
+        window.location.href = "?search=@(search)&column=" + param +"&orderBy=" +orderBy;
+    }
+    </script>
+   
     <table class="table">
         <thead>
             <tr>
-                <th>ID</th>
-                <th>Brand</th>
-                <th>Category</th>
-                <th>Price</th>
+            <th style="cursor: pointer;" onclick="sortList('Id')">ID @getArrow("Id")</th>
+            <th style="cursor:pointer;" onclick="sortList('Name')">Name @getArrow("Name")</th>
+            <th style="cursor: pointer;" onclick="sortList('Brand')">Brand @getArrow("Brand")</th>
+            <th style="cursor: pointer;" onclick="sortList('Category')">Category @getArrow("Category")</th>
+            <th style="cursor: pointer;" onclick="sortList('Price')">Price @getArrow("Price")</th>
                 <th>Image</th>
-                <th>Created On</th>
+            <th style="cursor: pointer;" onclick="sortList('CreatedOn')">Created On @getArrow("CreatedOn")</th>
                 <th>Action</th>
             </tr>
         </thead>
@@ -33,6 +70,7 @@
             {
             <tr>
                 <td>@product.Id</td>
+                <td>@product.Name</td>
                 <td>@product.Brand</td>
                 <td>@product.Category</td>
                 <td>@(product.Price) &#8377</td>
@@ -58,7 +96,9 @@
             {
                 active = "active";
             }
-            <li class="page-item @active"> <a class="page-link" asp-route-pageIndex="@i">@i</a></li>
+            <li class="page-item @active"> <a class="page-link" asp-route-pageIndex="@i"
+                   asp-route-search="@search" asp-route-column="@column" asp-route-orderBy ="@orderBy">@i</a>
+            </li>
         }
     </ul>
 </nav>

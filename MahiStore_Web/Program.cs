@@ -1,4 +1,4 @@
-using MahiStore_Web.Services;
+using MahiStore_Web.Data;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);

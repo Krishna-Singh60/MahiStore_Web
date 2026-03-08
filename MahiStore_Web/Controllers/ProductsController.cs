@@ -1,7 +1,8 @@
-﻿using MahiStore_Web.Models;
+﻿using MahiStore_Web.Data;
+using MahiStore_Web.Models;
 using MahiStore_Web.Models.DTO;
-using MahiStore_Web.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 
 namespace MahiStore_Web.Controllers
@@ -16,26 +17,118 @@ namespace MahiStore_Web.Controllers
              _dbContext = dbContext;
             _environment = environment;
         }
-        public IActionResult Index(int pageIndex)
+        public IActionResult Index(int pageIndex, string? search, string? column, string? orderBy)
         {
-            //IQueryable<Product> query = _dbContext.Products;
-            //var query = _dbContext.Products.OrderByDescending(o => o.Id);
-            var query = _dbContext.Products.OrderBy(o => o.Id);
+            IQueryable<Product> query = _dbContext.Products.AsNoTracking(); //Query the data from DB
+            if (!string.IsNullOrWhiteSpace(search))  // If no search then it will not fail
+            {
+                query = query.Where(p =>
+                        EF.Functions.Like(p.Name, $"%{search}%") ||
+                        EF.Functions.Like(p.Brand, $"%{search}%"));
+            }
+            //sort funtionally
+            string[] validColumn = {"Id","Name","Brand", "Category", "Price", "CreatedOn" };
+            string[] validOrderBy = { "desc", "asc" };
+
+            if(!validColumn.Contains(column, StringComparer.OrdinalIgnoreCase))
+            {
+                column = "Id";
+            }
+
+            if(!validOrderBy.Contains(orderBy, StringComparer.OrdinalIgnoreCase))
+                {
+                    orderBy = "asc";
+            }
+
+            query = (column?.ToLower(), orderBy?.ToLower()) switch
+            {
+                ("name", "asc") => query.OrderBy(p => p.Name),
+                ("name", "desc") => query.OrderByDescending(p => p.Name),
+
+                ("brand", "asc") => query.OrderBy(p => p.Brand),
+                ("brand", "desc") => query.OrderByDescending(p => p.Brand),
+
+                ("category", "asc") => query.OrderBy(p => p.Category),
+                ("category", "desc") => query.OrderByDescending(p => p.Category),
+
+                ("price", "asc") => query.OrderBy(p => p.Price),
+                ("price", "desc") => query.OrderByDescending(p => p.Price),
+
+                ("createdon", "asc") => query.OrderBy(p => p.CreatedAt),
+                ("createdon", "desc") => query.OrderByDescending(p => p.CreatedAt),
+
+                _ => query.OrderBy(p => p.Id)
+            };
+            //if (column == "Name")
+            //{ 
+            //    if (orderBy == "asc")
+            //    {
+            //        query = query.OrderBy(p => p.Name);
+            //    }
+            //    else
+            //    {
+            //        query = query.OrderByDescending(p => p.Name);
+            //    }
+            //}
+            //else if (column == "Brand")
+            //{
+            //    if (orderBy == "asc")
+            //    {
+            //        query = query.OrderBy(p => p.Brand);
+            //    }
+            //    else
+            //    {
+            //        query = query.OrderByDescending(p => p.Brand);
+            //    }
+            //}
+            //else if (column == "Category")
+            //{
+            //    if (orderBy == "asc")
+            //    {
+            //        query = query.OrderBy(p => p.Category);
+            //    }
+            //    else
+            //    {
+            //        query = query.OrderByDescending(p => p.Category);
+            //    }
+            //}
+            //else if (column == "Price")
+            //{
+            //    if (orderBy == "asc")
+            //    {
+            //        query = query.OrderBy(p => p.Price);
+            //    }
+            //    else
+            //    {
+            //        query = query.OrderByDescending(p => p.Price);
+            //    }
+            //}
+            //else if (column == "CreatedOn")
+            //{
+            //    if (orderBy == "asc")
+            //    {
+            //        query = query.OrderBy(p => p.CreatedAt);
+            //    }
+            //    else
+            //    {
+            //        query = query.OrderByDescending(p => p.CreatedAt);
+            //    }
+            //}
+            //query = query.OrderBy(p => p.Id);  //After search we will order the data by Id in Ascending order
             int totalItems = query.Count();  //1st DB Call
             int totalPages = (int)Math.Ceiling((double)totalItems / _pageSize);
 
-            if (pageIndex < 1)
-            {
-                pageIndex = 1;
-            }
-
+            if (pageIndex < 1)          { pageIndex = 1; }
             if (pageIndex > totalPages) { pageIndex = totalPages; }
+            if (totalPages == 0)        { totalPages = 1; }
 
-           
-           var products  = query.Skip((pageIndex -1) * _pageSize)
+            var products  = query.Skip((pageIndex -1) * _pageSize)
                                 .Take(_pageSize).ToList(); //2nd DB Call
             ViewData["CurrentPage"] = pageIndex;
             ViewData["TotalPages"] = totalPages;
+            ViewData["Search"] = search ?? "";
+            ViewData["Column"] = column;
+            ViewData["OrderBy"] = orderBy;
             return View(products);
         }
 
